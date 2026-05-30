@@ -10,3 +10,6 @@ pyqtgraph>=0.13
 
 # matplotlib（huawei_iotda_query.py / mqtt_query_shadow.py 监控模式使用）
 matplotlib>=3.5.0
+
+# 串口通信（esp8266_serial_bridge.py 使用）
+pyserial>=3.5
