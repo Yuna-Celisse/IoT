@@ -1,0 +1,17 @@
+{
+    "_说明": "复制此文件为 config.json 并填入你在华为云 IoTDA 控制台获取的真实值",
+
+    "device_id": "your-device-id",
+    "password": "your-mqtt-password-or-leave-empty-when-using-device-secret",
+    "device_secret": "your-device-secret-from-iotda-console",
+    "hostname": "your-instance-id.st1.iotda-device.cn-east-3.myhuaweicloud.com",
+    "port": 8883,
+    "timestamp": "",
+
+    "_REST_API_说明": "以下为 REST API 方式所需的参数（用于 huawei_iotda_query.py）",
+    "ak": "your-access-key",
+    "sk": "your-secret-access-key",
+    "project_id": "your-project-id",
+    "region": "cn-east-3",
+    "endpoint": "your-instance-id.st1.iotda-app.cn-east-3.myhuaweicloud.com"
+}

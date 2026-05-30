@@ -1,0 +1,12 @@
+# MQTT 客户端（华为云 IoTDA 设备侧通信）
+paho-mqtt>=1.6.0
+
+# HTTP 请求（华为云 IoTDA REST API 签名调用）
+requests>=2.28.0
+
+# Qt 实时可视化（iot_monitor.py 使用）
+PyQt5>=5.15
+pyqtgraph>=0.13
+
+# matplotlib（huawei_iotda_query.py / mqtt_query_shadow.py 监控模式使用）
+matplotlib>=3.5.0

@@ -1,0 +1,31 @@
+# 凭据文件 —— 包含 AK/SK 等敏感信息，切勿提交到版本控制
+credentials.json
+config.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# 虚拟环境
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 运行时生成的数据文件
+*.csv
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
