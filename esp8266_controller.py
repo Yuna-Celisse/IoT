@@ -16,11 +16,8 @@ ESP8266 AT 指令控制器 — 华为云 IoTDA
 """
 
 import argparse
-import hashlib
-import hmac
 import json
 import math
-import os
 import random
 import sys
 import time
@@ -29,51 +26,7 @@ from datetime import datetime, timezone
 import serial
 import serial.tools.list_ports
 
-
-# ============================================================
-# 配置加载
-# ============================================================
-
-def load_config(config_path: str = None) -> dict:
-    config = {
-        "device_id": os.environ.get("IOT_DEVICE_ID", ""),
-        "password": os.environ.get("IOT_PASSWORD", ""),
-        "device_secret": os.environ.get("IOT_DEVICE_SECRET", ""),
-        "hostname": os.environ.get("IOT_MQTT_HOST", ""),
-        "port": int(os.environ.get("IOT_MQTT_PORT", "1883")),
-        "timestamp": os.environ.get("IOT_TIMESTAMP", ""),
-    }
-    search_paths = []
-    if config_path:
-        search_paths.append(config_path)
-    search_paths.append(
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
-    )
-    search_paths.append("config.json")
-    for path in search_paths:
-        if os.path.isfile(path):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    file_config = json.load(f)
-                    for key in config:
-                        if key in file_config and file_config[key]:
-                            config[key] = file_config[key]
-                    break
-            except (json.JSONDecodeError, IOError) as e:
-                print(f"[!] 配置文件读取失败 ({path}): {e}")
-    return config
-
-
-def compute_password(device_secret: str, timestamp: str) -> str:
-    return hmac.new(
-        device_secret.encode("utf-8"),
-        timestamp.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest()
-
-
-def build_client_id(device_id: str, timestamp: str) -> str:
-    return f"{device_id}_0_0_{timestamp}"
+from common.iot_common import load_config, compute_password, build_client_id
 
 
 # ============================================================

@@ -21,84 +21,28 @@ IoT 本地实时监控软件 — 华为云 IoTDA（Qt 版）
 
 import argparse
 import csv
-import hashlib
-import hmac
 import json
-import os
 import ssl
 import sys
 import time
 import uuid
 from collections import deque
 from datetime import datetime, timezone
-from typing import Optional
 
 import paho.mqtt.client as mqtt
 
-# PyQt5 + pyqtgraph
 from PyQt5 import QtCore, QtWidgets
 import pyqtgraph as pg
 
-# 设置 pyqtgraph 全局外观
+from common.iot_common import load_config, compute_password, build_client_id
+
+# pyqtgraph 全局外观
 pg.setConfigOptions(
     antialias=True,
     background=(30, 30, 35),
     foreground=(200, 200, 200),
 )
 pg.setConfigOption("leftButtonPan", False)
-
-
-# ============================================================
-# 配置加载
-# ============================================================
-
-def compute_password(device_secret: str, timestamp: str = None) -> str:
-    if not timestamp:
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H")
-    return hmac.new(
-        device_secret.encode("utf-8"),
-        timestamp.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest()
-
-
-def build_client_id(device_id: str, timestamp: str = None) -> str:
-    if not timestamp:
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H")
-    return f"{device_id}_0_0_{timestamp}"
-
-
-def load_config(config_path: str = None) -> dict:
-    config = {
-        "device_id": os.environ.get("IOT_DEVICE_ID", ""),
-        "password": os.environ.get("IOT_PASSWORD", ""),
-        "device_secret": os.environ.get("IOT_DEVICE_SECRET", ""),
-        "hostname": os.environ.get("IOT_MQTT_HOST", ""),
-        "port": int(os.environ.get("IOT_MQTT_PORT", "8883")),
-        "timestamp": os.environ.get("IOT_TIMESTAMP", ""),
-    }
-
-    search_paths = []
-    if config_path:
-        search_paths.append(config_path)
-    search_paths.append(
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
-    )
-    search_paths.append("config.json")
-
-    for path in search_paths:
-        if os.path.isfile(path):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    file_config = json.load(f)
-                    for key in config:
-                        if key in file_config and file_config[key]:
-                            config[key] = file_config[key]
-                    break
-            except (json.JSONDecodeError, IOError) as e:
-                print(f"[!] 配置文件读取失败 ({path}): {e}")
-
-    return config
 
 
 # ============================================================
