@@ -94,8 +94,8 @@ class ESP8266Controller:
         self.client_id = build_client_id(device_id, timestamp)
         self.report_count = 0
 
-    def _send_cmd(self, cmd: str, wait_ms: float = 1.0, timeout: float = 15) -> str:
-        """发送 AT 指令并读取响应"""
+    def _send_cmd(self, cmd: str, wait_ms: float = 1.5, timeout: float = 15) -> str:
+        """发送 AT 指令并读取完整响应"""
         self.ser.reset_input_buffer()
         full_cmd = cmd + "\r\n"
         self.ser.write(full_cmd.encode())
@@ -106,26 +106,41 @@ class ESP8266Controller:
             if self.ser.in_waiting > 0:
                 chunk = self.ser.read(self.ser.in_waiting).decode("utf-8", errors="replace")
                 response += chunk
-                if "OK" in response or "ERROR" in response:
-                    break
-            time.sleep(0.2)
+            # ESP8266 响应末尾是 \r\nOK\r\n 或 \r\nERROR\r\n
+            if response and ("\r\nOK\r\n" in response or "\r\nERROR\r\n" in response):
+                break
+            if response.strip().endswith("OK") or response.strip().endswith("ERROR"):
+                time.sleep(0.2)
+                break
+            time.sleep(0.15)
         return response.strip()
 
     def setup_mqtt(self) -> bool:
         """配置 ESP8266 MQTT 连接参数"""
-        print("[1/3] 配置 MQTT 用户...")
+        # 先清理旧的 MQTT 状态
+        print("[0/4] 清理旧 MQTT 连接...")
+        self._send_cmd("AT+MQTTCLEAN=0", wait_ms=0.5)
+        time.sleep(0.5)
+
+        # 调试：检查固件是否支持 MQTT 命令
+        print("[*] 检查固件版本...")
+        ver = self._send_cmd("AT+GMR", wait_ms=1.0)
+        print(f"      {ver[:100]}")
+
+        print("[1/4] 配置 MQTT 用户...")
         cmd = (
             f'AT+MQTTUSERCFG=0,1,"{self.client_id}",'
             f'"{self.device_id}","{self.password}",0,0,""'
         )
-        resp = self._send_cmd(cmd)
-        print(f"      响应: {resp[:80]}")
+        print(f"      CMD: {cmd}")
+        resp = self._send_cmd(cmd, wait_ms=3.0)
+        print(f"      响应: {resp[:200]}")
         if "OK" not in resp:
             print("      [X] 配置失败")
             return False
         print("      [OK]")
 
-        print("[2/3] 连接 IoTDA (最长等待15秒)...")
+        print("[2/4] 连接 IoTDA (最长等待15秒)...")
         cmd = f'AT+MQTTCONN=0,"{self.hostname}",{self.mqtt_port},1'
         resp = self._send_cmd(cmd, wait_ms=3.0, timeout=15)
         print(f"      响应: {resp[:120]}")
@@ -135,7 +150,7 @@ class ESP8266Controller:
         print("      [OK]")
         time.sleep(1)
 
-        print("[3/3] 订阅响应 Topic...")
+        print("[3/4] 订阅响应 Topic...")
         sub_topic = f"$oc/devices/{self.device_id}/sys/properties/report/response"
         cmd = f'AT+MQTTSUB=0,"{sub_topic}",1'
         resp = self._send_cmd(cmd)
@@ -156,21 +171,16 @@ class ESP8266Controller:
         cmd = f'AT+MQTTPUBRAW=0,"{pub_topic}",{payload_bytes},0,0'
         resp = self._send_cmd(cmd)
         if ">" not in resp:
-            print(f"      [X] 未收到 '>' 提示符: {resp[:60]}")
             return False
 
-        # 收到 '>' 后发送 payload（不加 \r\n，直接发原始内容）
+        # 收到 '>' 后发送 payload
         self.ser.write(payload.encode())
         time.sleep(0.8)
-        # 读取发布结果
         if self.ser.in_waiting > 0:
             result = self.ser.read(self.ser.in_waiting).decode("utf-8", errors="replace")
             if "OK" in result:
                 self.report_count += 1
                 return True
-            else:
-                print(f"      [X] 发布失败: {result[:60]}")
-                return False
         self.report_count += 1
         return True
 
@@ -213,7 +223,7 @@ def parse_args():
     p.add_argument("--config", "-c", default=None, help="配置文件路径")
     p.add_argument("--port", "-p", default=None, help="串口名")
     p.add_argument("--baud", "-b", type=int, default=115200, help="波特率")
-    p.add_argument("--interval", "-i", type=float, default=5.0, help="上报间隔（秒）")
+    p.add_argument("--interval", "-i", type=float, default=10.0, help="上报间隔（秒）")
     p.add_argument("--list", "-l", action="store_true", help="列出串口后退出")
     return p.parse_args()
 

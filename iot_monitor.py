@@ -84,7 +84,7 @@ class MQTTDataCollector(QtCore.QThread):
         else:
             password = self.config["password"]
 
-        client_id = build_client_id(self.config["device_id"], timestamp)
+        client_id = build_client_id(self.config["device_id"], timestamp, suffix=1)
 
         client = mqtt.Client(
             mqtt.CallbackAPIVersion.VERSION2,

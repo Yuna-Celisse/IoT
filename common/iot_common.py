@@ -66,21 +66,24 @@ def load_config(config_path: str = None) -> dict:
 # ============================================================
 
 def compute_password(device_secret: str, timestamp: str = None) -> str:
-    """HMAC-SHA256 计算 MQTT 连接密码"""
+    """HMAC-SHA256 计算 MQTT 连接密码
+    Password = HMAC-SHA256(key=timestamp, msg=device_secret)
+    参考华为云文档：以secret为内容，时间戳为密钥
+    """
     if not timestamp:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H")
     return hmac.new(
-        device_secret.encode("utf-8"),
-        timestamp.encode("utf-8"),
+        timestamp.encode("utf-8"),       # key = 时间戳
+        device_secret.encode("utf-8"),   # msg = secret
         hashlib.sha256,
     ).hexdigest()
 
 
-def build_client_id(device_id: str, timestamp: str = None) -> str:
-    """构建 MQTT Client ID：{device_id}_0_0_{timestamp}"""
+def build_client_id(device_id: str, timestamp: str = None, suffix: int = 0) -> str:
+    """构建 MQTT Client ID：{device_id}_0_{suffix}_{timestamp}"""
     if not timestamp:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H")
-    return f"{device_id}_0_0_{timestamp}"
+    return f"{device_id}_0_{suffix}_{timestamp}"
 
 
 def get_effective_mqtt_params(config: dict) -> dict:
